@@ -6,7 +6,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import {
   LayoutDashboard,
@@ -23,7 +23,8 @@ import {
   Activity,
   LogOut,
 } from "lucide-react"
-import { useUser } from "@/lib/user-context"
+import { UserProvider, useUser } from "@/lib/user-context"
+import { signOut } from "@/lib/auth"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -37,25 +38,11 @@ const navigation = [
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+function DashboardSidebar({ onItemClick }: { onItemClick?: () => void }) {
   const pathname = usePathname()
   const { user } = useUser()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const handleSignOut = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" })
-      window.location.href = "/"
-    } catch (error) {
-      console.error("Sign out error:", error)
-    }
-  }
-
-  const SidebarContent = () => (
+  return (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center space-x-3 p-6 border-b border-green-100">
@@ -106,7 +93,7 @@ export default function DashboardLayout({
             <Link
               key={item.name}
               href={item.href}
-              onClick={() => setSidebarOpen(false)}
+              onClick={onItemClick}
               className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
@@ -125,57 +112,67 @@ export default function DashboardLayout({
 
       {/* Footer */}
       <div className="p-4 border-t border-green-100">
-        <Button
-          onClick={handleSignOut}
-          variant="outline"
-          className="w-full justify-start text-gray-700 hover:text-red-600 hover:border-red-300"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
-        </Button>
+        <form action={signOut}>
+          <Button
+            type="submit"
+            variant="outline"
+            className="w-full justify-start text-gray-700 hover:text-red-600 hover:border-red-300"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        </form>
       </div>
     </div>
   )
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-80">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
+    <UserProvider>
+      <div className="min-h-screen bg-gray-50">
+        {/* Mobile sidebar */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent side="left" className="p-0 w-80">
+            <DashboardSidebar onItemClick={() => setSidebarOpen(false)} />
+          </SheetContent>
+        </Sheet>
 
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-80 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white border-r border-green-100 shadow-sm">
-          <SidebarContent />
+        {/* Desktop sidebar */}
+        <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-80 lg:flex-col">
+          <div className="flex flex-col flex-grow bg-white border-r border-green-100 shadow-sm">
+            <DashboardSidebar />
+          </div>
         </div>
-      </div>
 
-      {/* Main content */}
-      <div className="lg:pl-80">
-        {/* Mobile header */}
-        <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-green-100">
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm">
+        {/* Main content */}
+        <div className="lg:pl-80">
+          {/* Mobile header */}
+          <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-green-100">
+            <Button variant="outline" size="sm" onClick={() => setSidebarOpen(true)}>
               <Menu className="h-4 w-4" />
             </Button>
-          </SheetTrigger>
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg">
-              <Sprout className="h-5 w-5 text-white" />
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg">
+                <Sprout className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-lg font-bold text-gray-900">FarmAI</span>
             </div>
-            <span className="text-lg font-bold text-gray-900">FarmAI</span>
+            <Button variant="outline" size="sm">
+              <Bell className="h-4 w-4" />
+            </Button>
           </div>
-          <Button variant="outline" size="sm">
-            <Bell className="h-4 w-4" />
-          </Button>
-        </div>
 
-        {/* Page content */}
-        <main className="flex-1">{children}</main>
+          {/* Page content */}
+          <main className="flex-1">{children}</main>
+        </div>
       </div>
-    </div>
+    </UserProvider>
   )
 }

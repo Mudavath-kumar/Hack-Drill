@@ -2,346 +2,361 @@
 
 import { useState, useEffect } from "react"
 
+// Types for AI suggestions
 export interface CropSuggestion {
-  id: string
+  id: number
   name: string
-  confidence: number
   reason: string
+  confidence: number
+  roi: number
   expectedYield: string
   profitability: "High" | "Medium" | "Low"
-  riskLevel: "Low" | "Medium" | "High"
-  plantingWindow: string
+  riskLevel: "High" | "Medium" | "Low"
   marketDemand: "High" | "Medium" | "Low"
-  waterRequirement: "Low" | "Medium" | "High"
   soilSuitability: number
+  weatherCompatibility: number
   aiInsights: string[]
   marketTrends: string[]
-  weatherCompatibility: number
-  roi: number
+  plantingWindow: string
+  waterRequirement: string
 }
 
 export interface MarketSuggestion {
-  id: string
+  id: number
   crop: string
   action: "Buy" | "Sell" | "Hold"
-  confidence: number
+  reasoning: string
   currentPrice: number
   predictedPrice: number
-  timeframe: string
-  reasoning: string
+  confidence: number
   marketFactors: string[]
-  riskAssessment: "Low" | "Medium" | "High"
+  riskAssessment: "High" | "Medium" | "Low"
   profitPotential: number
 }
 
 export interface AIInsight {
-  id: string
-  type: "weather" | "market" | "crop" | "general"
+  id: number
   title: string
   description: string
+  type: "weather" | "market" | "crop" | "general"
   priority: "High" | "Medium" | "Low"
+  confidence: number
   actionable: boolean
   suggestedActions: string[]
-  confidence: number
-  timestamp: Date
 }
 
 export interface MarketPrediction {
   crop: string
   currentPrice: number
+  trend: "Bullish" | "Bearish" | "Neutral"
+  confidence: number
   predictedPrices: {
     oneWeek: number
     oneMonth: number
     threeMonths: number
   }
-  trend: "Bullish" | "Bearish" | "Neutral"
-  confidence: number
   factors: string[]
 }
 
+export interface MarketValue {
+  totalPortfolioValue: number
+  dailyChange: number
+  dailyChangePercent: number
+  topPerformer: string
+  topPerformerGain: number
+  volatilityIndex: number
+}
+
+// Mock data for AI suggestions
+const mockCropSuggestions: CropSuggestion[] = [
+  {
+    id: 1,
+    name: "Winter Wheat",
+    reason: "Optimal soil conditions and favorable market forecast",
+    confidence: 92,
+    roi: 156,
+    expectedYield: "65 bu/acre",
+    profitability: "High",
+    riskLevel: "Low",
+    marketDemand: "High",
+    soilSuitability: 95,
+    weatherCompatibility: 88,
+    aiInsights: [
+      "Current soil nitrogen levels are ideal for winter wheat",
+      "Weather patterns suggest a mild winter with adequate precipitation",
+      "Historical yield data shows 15% above average potential",
+    ],
+    marketTrends: [
+      "Global wheat demand projected to increase 7% next quarter",
+      "Local mills offering premium contracts for quality wheat",
+      "Export opportunities expanding to Asian markets",
+    ],
+    plantingWindow: "Sept 15 - Oct 30",
+    waterRequirement: "Moderate",
+  },
+  {
+    id: 2,
+    name: "Soybeans",
+    reason: "Rising global demand and excellent growing conditions",
+    confidence: 87,
+    roi: 132,
+    expectedYield: "58 bu/acre",
+    profitability: "High",
+    riskLevel: "Medium",
+    marketDemand: "High",
+    soilSuitability: 92,
+    weatherCompatibility: 85,
+    aiInsights: [
+      "Soil pH levels are in optimal range for soybean cultivation",
+      "Predicted rainfall patterns align with critical growth stages",
+      "Low pest pressure expected based on current ecosystem analysis",
+    ],
+    marketTrends: [
+      "Soybean futures showing strong upward momentum",
+      "Increased demand from biofuel sector",
+      "China imports expected to rise by 12% next season",
+    ],
+    plantingWindow: "May 1 - June 15",
+    waterRequirement: "Moderate-High",
+  },
+  {
+    id: 3,
+    name: "Specialty Corn",
+    reason: "Premium pricing and favorable growing conditions",
+    confidence: 84,
+    roi: 118,
+    expectedYield: "210 bu/acre",
+    profitability: "Medium",
+    riskLevel: "Medium",
+    marketDemand: "Medium",
+    soilSuitability: 88,
+    weatherCompatibility: 91,
+    aiInsights: [
+      "Soil organic matter content is ideal for corn development",
+      "Temperature projections favor extended growing season",
+      "Field drainage patterns support optimal root development",
+    ],
+    marketTrends: [
+      "Specialty corn commanding 15% premium over commodity corn",
+      "Growing market for non-GMO varieties",
+      "Local ethanol plants increasing capacity",
+    ],
+    plantingWindow: "April 15 - May 20",
+    waterRequirement: "High",
+  },
+]
+
+const mockMarketSuggestions: MarketSuggestion[] = [
+  {
+    id: 1,
+    crop: "Soybeans",
+    action: "Buy",
+    reasoning: "Futures indicate price increase due to export demand",
+    currentPrice: 14.25,
+    predictedPrice: 16.8,
+    confidence: 88,
+    marketFactors: [
+      "China increasing import quotas by 15%",
+      "Weather concerns in Brazil affecting global supply",
+      "Domestic crush demand rising due to biofuel expansion",
+    ],
+    riskAssessment: "Low",
+    profitPotential: 18.9,
+  },
+  {
+    id: 2,
+    crop: "Corn",
+    action: "Hold",
+    reasoning: "Price stability expected for next 30 days",
+    currentPrice: 5.75,
+    predictedPrice: 5.9,
+    confidence: 76,
+    marketFactors: [
+      "Ethanol production steady with slight upward trend",
+      "USDA reports indicate balanced supply/demand",
+      "Weather conditions favorable for current growing season",
+    ],
+    riskAssessment: "Low",
+    profitPotential: 2.6,
+  },
+  {
+    id: 3,
+    crop: "Wheat",
+    action: "Sell",
+    reasoning: "Price peak detected, decline expected",
+    currentPrice: 7.85,
+    predictedPrice: 6.95,
+    confidence: 82,
+    marketFactors: [
+      "Record Russian wheat harvest entering global market",
+      "Favorable weather in EU increasing yield expectations",
+      "Technical indicators suggest overbought conditions",
+    ],
+    riskAssessment: "Medium",
+    profitPotential: -11.5,
+  },
+]
+
+const mockAIInsights: AIInsight[] = [
+  {
+    id: 1,
+    title: "Drought Risk Alert",
+    description: "Weather models predict 60% below average rainfall for next 30 days",
+    type: "weather",
+    priority: "High",
+    confidence: 85,
+    actionable: true,
+    suggestedActions: [
+      "Adjust irrigation schedules to compensate for rainfall deficit",
+      "Consider deploying drought-resistant varieties for late planting",
+      "Review water conservation strategies for critical growth stages",
+    ],
+  },
+  {
+    id: 2,
+    title: "Market Opportunity: Soybeans",
+    description: "Futures contracts showing favorable entry point with 15% upside potential",
+    type: "market",
+    priority: "Medium",
+    confidence: 78,
+    actionable: true,
+    suggestedActions: [
+      "Consider forward contracting 30% of expected soybean harvest",
+      "Monitor Brazil weather patterns for potential supply disruptions",
+      "Set price alerts at $14.50 for potential additional contracts",
+    ],
+  },
+  {
+    id: 3,
+    title: "Pest Pressure Warning",
+    description: "Satellite imagery and temperature data indicate increased risk of corn rootworm",
+    type: "crop",
+    priority: "High",
+    confidence: 92,
+    actionable: true,
+    suggestedActions: [
+      "Schedule field scouting within next 7 days",
+      "Prepare targeted pesticide application if threshold levels detected",
+      "Consider biological control options for organic fields",
+    ],
+  },
+  {
+    id: 4,
+    title: "Equipment Efficiency Alert",
+    description: "Combine harvester showing 15% below optimal performance based on IoT sensors",
+    type: "general",
+    priority: "Medium",
+    confidence: 94,
+    actionable: true,
+    suggestedActions: [
+      "Schedule maintenance check focusing on threshing components",
+      "Calibrate sensors and adjust settings for current crop conditions",
+      "Consider operator training refresher for optimal machine settings",
+    ],
+  },
+]
+
+const mockMarketPredictions: MarketPrediction[] = [
+  {
+    crop: "Soybeans",
+    currentPrice: 14.25,
+    trend: "Bullish",
+    confidence: 87,
+    predictedPrices: {
+      oneWeek: 14.65,
+      oneMonth: 15.3,
+      threeMonths: 16.8,
+    },
+    factors: [
+      "Strong export demand from China",
+      "Weather concerns in South America",
+      "Declining domestic stockpiles",
+      "Increased biofuel mandates",
+    ],
+  },
+  {
+    crop: "Corn",
+    currentPrice: 5.75,
+    trend: "Neutral",
+    confidence: 76,
+    predictedPrices: {
+      oneWeek: 5.8,
+      oneMonth: 5.9,
+      threeMonths: 5.85,
+    },
+    factors: [
+      "Balanced supply and demand fundamentals",
+      "Stable ethanol production",
+      "Average crop conditions in major growing regions",
+      "Adequate global stockpiles",
+    ],
+  },
+  {
+    crop: "Wheat",
+    currentPrice: 7.85,
+    trend: "Bearish",
+    confidence: 82,
+    predictedPrices: {
+      oneWeek: 7.6,
+      oneMonth: 7.25,
+      threeMonths: 6.95,
+    },
+    factors: [
+      "Record Russian wheat exports",
+      "Favorable growing conditions in EU",
+      "Declining global import demand",
+      "Technical selling pressure",
+    ],
+  },
+]
+
+const mockMarketValue: MarketValue = {
+  totalPortfolioValue: 2450000,
+  dailyChange: 35000,
+  dailyChangePercent: 1.45,
+  topPerformer: "Soybeans",
+  topPerformerGain: 3.2,
+  volatilityIndex: 18.5,
+}
+
+// Hooks for AI suggestions
 export function useAISuggestions() {
-  const [cropSuggestions, setCropSuggestions] = useState<CropSuggestion[]>([
-    {
-      id: "1",
-      name: "Precision Corn",
-      confidence: 94,
-      reason: "Optimal soil conditions and favorable weather patterns detected",
-      expectedYield: "185 bushels/acre",
-      profitability: "High",
-      riskLevel: "Low",
-      plantingWindow: "April 15 - May 10",
-      marketDemand: "High",
-      waterRequirement: "Medium",
-      soilSuitability: 92,
-      aiInsights: [
-        "Soil pH levels are optimal for corn growth",
-        "Weather patterns show 85% chance of adequate rainfall",
-        "Market demand projected to increase 12% this season",
-      ],
-      marketTrends: [
-        "Export demand from Asia increasing",
-        "Ethanol production driving prices up",
-        "Supply chain improvements reducing costs",
-      ],
-      weatherCompatibility: 88,
-      roi: 156,
-    },
-    {
-      id: "2",
-      name: "Drought-Resistant Soybeans",
-      confidence: 89,
-      reason: "Climate resilience and strong market fundamentals",
-      expectedYield: "52 bushels/acre",
-      profitability: "High",
-      riskLevel: "Medium",
-      plantingWindow: "May 1 - June 15",
-      marketDemand: "High",
-      waterRequirement: "Low",
-      soilSuitability: 87,
-      aiInsights: [
-        "Drought-resistant variety recommended for your region",
-        "Nitrogen-fixing properties will improve soil health",
-        "Strong protein content commands premium pricing",
-      ],
-      marketTrends: [
-        "Plant-based protein demand surging",
-        "China trade relations improving",
-        "Sustainable farming incentives available",
-      ],
-      weatherCompatibility: 91,
-      roi: 142,
-    },
-    {
-      id: "3",
-      name: "Winter Wheat Premium",
-      confidence: 82,
-      reason: "Extended growing season maximizes yield potential",
-      expectedYield: "68 bushels/acre",
-      profitability: "Medium",
-      riskLevel: "Low",
-      plantingWindow: "September 20 - October 15",
-      marketDemand: "Medium",
-      waterRequirement: "Medium",
-      soilSuitability: 85,
-      aiInsights: [
-        "Cold tolerance excellent for your climate zone",
-        "Disease resistance reduces input costs",
-        "Premium quality grade achievable with proper management",
-      ],
-      marketTrends: ["Global wheat stocks declining", "Quality premiums increasing", "Local mill contracts available"],
-      weatherCompatibility: 79,
-      roi: 128,
-    },
-  ])
+  const [cropSuggestions, setCropSuggestions] = useState<CropSuggestion[]>([])
+  const [marketSuggestions, setMarketSuggestions] = useState<MarketSuggestion[]>([])
+  const [aiInsights, setAIInsights] = useState<AIInsight[]>([])
+  const [marketPredictions, setMarketPredictions] = useState<MarketPrediction[]>([])
 
-  const [marketSuggestions, setMarketSuggestions] = useState<MarketSuggestion[]>([
-    {
-      id: "1",
-      crop: "Corn",
-      action: "Sell",
-      confidence: 87,
-      currentPrice: 6.85,
-      predictedPrice: 7.2,
-      timeframe: "Next 2 weeks",
-      reasoning: "Price momentum strong, weather concerns in key growing regions",
-      marketFactors: [
-        "Drought conditions in Midwest",
-        "Strong export demand",
-        "Reduced planted acres",
-        "Ethanol production increasing",
-      ],
-      riskAssessment: "Low",
-      profitPotential: 15.2,
-    },
-    {
-      id: "2",
-      crop: "Soybeans",
-      action: "Hold",
-      confidence: 73,
-      currentPrice: 14.2,
-      predictedPrice: 14.8,
-      timeframe: "Next month",
-      reasoning: "Market consolidating, wait for clearer trend direction",
-      marketFactors: [
-        "Trade negotiations ongoing",
-        "South American harvest approaching",
-        "Crushing margins improving",
-        "Weather patterns uncertain",
-      ],
-      riskAssessment: "Medium",
-      profitPotential: 8.7,
-    },
-    {
-      id: "3",
-      crop: "Wheat",
-      action: "Buy",
-      confidence: 91,
-      currentPrice: 8.45,
-      predictedPrice: 9.15,
-      timeframe: "Next 6 weeks",
-      reasoning: "Seasonal demand surge expected, supply concerns mounting",
-      marketFactors: [
-        "Global inventory declining",
-        "Quality issues in major exporters",
-        "Seasonal demand from millers",
-        "Currency factors favorable",
-      ],
-      riskAssessment: "Low",
-      profitPotential: 18.9,
-    },
-  ])
-
-  const [aiInsights, setAiInsights] = useState<AIInsight[]>([
-    {
-      id: "1",
-      type: "weather",
-      title: "Optimal Planting Window Approaching",
-      description: "Weather models show ideal conditions for corn planting in 5-7 days",
-      priority: "High",
-      actionable: true,
-      suggestedActions: ["Prepare planting equipment", "Check seed inventory", "Schedule soil testing"],
-      confidence: 92,
-      timestamp: new Date(),
-    },
-    {
-      id: "2",
-      type: "market",
-      title: "Soybean Price Surge Predicted",
-      description: "AI models predict 12% price increase in soybeans over next 30 days",
-      priority: "High",
-      actionable: true,
-      suggestedActions: ["Consider forward contracting", "Review storage capacity", "Monitor basis levels"],
-      confidence: 85,
-      timestamp: new Date(),
-    },
-    {
-      id: "3",
-      type: "crop",
-      title: "Disease Pressure Alert",
-      description: "Fungal disease risk elevated for wheat crops in your area",
-      priority: "Medium",
-      actionable: true,
-      suggestedActions: ["Scout fields regularly", "Prepare fungicide application", "Monitor weather conditions"],
-      confidence: 78,
-      timestamp: new Date(),
-    },
-  ])
-
-  const [marketPredictions, setMarketPredictions] = useState<MarketPrediction[]>([
-    {
-      crop: "Corn",
-      currentPrice: 6.85,
-      predictedPrices: {
-        oneWeek: 7.02,
-        oneMonth: 7.35,
-        threeMonths: 7.8,
-      },
-      trend: "Bullish",
-      confidence: 87,
-      factors: [
-        "Weather concerns in key regions",
-        "Strong ethanol demand",
-        "Export pace above average",
-        "Reduced planted acres",
-      ],
-    },
-    {
-      crop: "Soybeans",
-      currentPrice: 14.2,
-      predictedPrices: {
-        oneWeek: 14.35,
-        oneMonth: 14.8,
-        threeMonths: 15.25,
-      },
-      trend: "Bullish",
-      confidence: 73,
-      factors: [
-        "China trade improving",
-        "Protein demand increasing",
-        "South American weather risks",
-        "Crushing margins strong",
-      ],
-    },
-    {
-      crop: "Wheat",
-      currentPrice: 8.45,
-      predictedPrices: {
-        oneWeek: 8.65,
-        oneMonth: 9.15,
-        threeMonths: 9.45,
-      },
-      trend: "Bullish",
-      confidence: 91,
-      factors: [
-        "Global stocks declining",
-        "Quality concerns in major exporters",
-        "Seasonal demand surge",
-        "Currency factors favorable",
-      ],
-    },
-  ])
-
-  // Simulate real-time updates
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Update market predictions with slight variations
-      setMarketPredictions((prev) =>
-        prev.map((prediction) => ({
-          ...prediction,
-          currentPrice: prediction.currentPrice + (Math.random() - 0.5) * 0.2,
-          confidence: Math.max(60, Math.min(95, prediction.confidence + (Math.random() - 0.5) * 5)),
-        })),
-      )
+    // Simulate API fetch with mock data
+    const fetchData = () => {
+      setCropSuggestions(mockCropSuggestions)
+      setMarketSuggestions(mockMarketSuggestions)
+      setAIInsights(mockAIInsights)
+      setMarketPredictions(mockMarketPredictions)
+    }
 
-      // Update crop suggestions confidence
-      setCropSuggestions((prev) =>
-        prev.map((suggestion) => ({
-          ...suggestion,
-          confidence: Math.max(70, Math.min(98, suggestion.confidence + (Math.random() - 0.5) * 3)),
-        })),
-      )
-    }, 10000) // Update every 10 seconds
-
-    return () => clearInterval(interval)
+    fetchData()
+    // In a real app, you would fetch from an API and possibly set up a refresh interval
   }, [])
 
-  return {
-    cropSuggestions,
-    marketSuggestions,
-    aiInsights,
-    marketPredictions,
-  }
+  return { cropSuggestions, marketSuggestions, aiInsights, marketPredictions }
 }
 
 export function useRealTimeMarketValue() {
-  const [marketValue, setMarketValue] = useState({
-    totalPortfolioValue: 2450000,
-    dailyChange: 45600,
-    dailyChangePercent: 1.9,
-    topPerformer: "Corn",
-    topPerformerGain: 8.7,
-    marketCap: 2400000000000,
-    tradingVolume: 15200000,
-    activeContracts: 8456,
-    volatilityIndex: 23.4,
-  })
+  const [marketValue, setMarketValue] = useState<MarketValue>(mockMarketValue)
 
   useEffect(() => {
+    // Simulate real-time updates
     const interval = setInterval(() => {
-      setMarketValue((prev) => {
-        const change = (Math.random() - 0.5) * 50000
-        const newValue = prev.totalPortfolioValue + change
-        const changePercent = (change / prev.totalPortfolioValue) * 100
-
-        return {
-          ...prev,
-          totalPortfolioValue: newValue,
-          dailyChange: prev.dailyChange + change,
-          dailyChangePercent: changePercent,
-          topPerformerGain: Math.max(0, prev.topPerformerGain + (Math.random() - 0.5) * 2),
-          volatilityIndex: Math.max(10, Math.min(40, prev.volatilityIndex + (Math.random() - 0.5) * 2)),
-        }
-      })
+      // In a real app, this would fetch from an API
+      // Here we just slightly modify the mock data to simulate changes
+      setMarketValue((prev) => ({
+        ...prev,
+        totalPortfolioValue: prev.totalPortfolioValue + (Math.random() * 10000 - 5000),
+        dailyChange: prev.dailyChange + (Math.random() * 1000 - 500),
+        dailyChangePercent: prev.dailyChangePercent + (Math.random() * 0.2 - 0.1),
+        volatilityIndex: Math.max(5, Math.min(30, prev.volatilityIndex + (Math.random() * 1 - 0.5))),
+      }))
     }, 5000) // Update every 5 seconds
 
     return () => clearInterval(interval)
