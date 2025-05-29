@@ -3,7 +3,7 @@
 
 link:https://v0-hack-drill.vercel.app/dashboard
 
-![1000178015](https://github.com/user-attachments/assets/a3e63e68-83a1-4037-aaa9-4187c0065c52)
+![1000178016](https://github.com/user-attachments/assets/e19dbe10-3579-4610-a6b6-ce320559b3ac)
 
 
 ## System Architecture
