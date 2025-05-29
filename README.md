@@ -2,6 +2,7 @@
 # FarmPulse: Technical Implementation Overview
 
 link:https://v0-hack-drill.vercel.app/dashboard
+![Uploading 1000177914.jpg…]()
 
 
 ## System Architecture
